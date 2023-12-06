@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>PID-Reglir</title>
+    <!--link rel="stylesheet" href="./style.css"-->
+    <!--link rel="icon" href="./favicon.ico" type="image/x-icon"-->
+  </head>
+  <body>
+    <main>
+        <h1>Einfaldur PID-Reglir</h1>
+        <h3>Til þess að sjá tölur: hægri smella á línuritið og velja "inspect" og finna þar "Console" flipa. (Chrome Browser)</h3>
+        <canvas id="myChart" style="width:100%"></canvas>
+    </main>
+    <script src="Chart_294.js"></script>
+	<script>
+        // Data for graph
+        const time_arr = [];
+        const data1_arr = [];
+        const data2_arr = [];
+        const data3_arr = [];
+
+
+
+        class PIDReglir {
+            constructor(kp, ki, kd) {
+                this.kp = kp; // Hlutfallsreglun.
+                this.ki = ki; // Heildunarreglun.
+                this.kd = kd; // Afleiðureglun.
+
+                this.geymtError = 0;
+                this.heildi = 0;
+            }
+
+            reikna(pidkerfi, oskGildi, dt) {
+                // Reikna error:
+                const error = oskGildi - pidkerfi;
+
+                // Endurreikn heildun:
+                this.heildi += error * dt;
+
+                // Reikna afleiðu:
+                const afleiða = (error - this.geymtError) / dt;
+
+                // Reikna PID utMerki
+                const utMerki = this.kp * error + this.ki * this.heildi + this.kd * afleiða;
+
+                // Geyma error fyrir næstu útreikning:
+                this.geymtError = error;
+
+                return utMerki;
+            }
+        }
+
+        // Svona er hægt að nota reglirinn:
+        const pidReglir = new PIDReglir(0.2, 0.01, 0.05);
+        const oskGildi = 30; // Merkið sem við viljum regla að.
+        let kerfi = 10; // Múverandi staða á kerfinu.
+
+        // Herma tíma sem líður (með föstum tíma þrepum):
+        const dt = 0.1;
+        for (let i = 0; i < 50; i++) {
+            const utMerki = pidReglir.reikna(kerfi, oskGildi, dt);
+
+            // Bæta merki frá reglir við kerfið.
+            // Hérna fer stýring fram á kerfinu (the control action):
+            kerfi += utMerki;
+
+            // Sýn niðurstöður í console:
+            console.log(`Iteration ${i + 1}: oskGildi=${oskGildi}, Kerfið=${kerfi}, Útmerki=${utMerki}`);
+
+            // Pushing data for graph
+            time_arr.push(i + 1);
+            data1_arr.push(oskGildi);
+            data2_arr.push(kerfi);
+            data3_arr.push(utMerki);
+        }
+
+
+
+        // Making the graph
+        new Chart("myChart", {
+            type: "line",
+            data: {
+                labels: time_arr,
+                datasets: [{ 
+                data: data1_arr,
+                borderColor: "red",
+                fill: false
+                }, { 
+                data: data2_arr,
+                borderColor: "green",
+                fill: false
+                }, { 
+                data: data3_arr,
+                borderColor: "blue",
+                fill: false
+                }]
+            },
+            options: {
+                legend: {display: false}
+            }
+        });
+
+    </script>
+  </body>
+</html>
