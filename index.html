@@ -7,20 +7,35 @@
     <title>PID-Reglir</title>
     <!--link rel="stylesheet" href="./style.css"-->
     <!--link rel="icon" href="./favicon.ico" type="image/x-icon"-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <main>
         <h1>Einfaldur PID-Reglir</h1>
         <h3>Til þess að sjá tölur: hægri smella á línuritið og velja "inspect" og finna þar "Console" flipa. (Chrome Browser)</h3>
-        <canvas id="myChart" style="width:100%"></canvas>
+        <h3>ATH: Vafri/Tölva þarf aðgang að interneti svo hægt sé að sýna línurit.</h3>
+        <canvas id="linurit" style="width:100%"></canvas>
     </main>
-    <script src="Chart_294.js"></script>
 	<script>
-        // Data for graph
-        const time_arr = [];
-        const data1_arr = [];
-        const data2_arr = [];
-        const data3_arr = [];
+        // Setja upp línuritið:
+        const canvas = document.getElementById('linurit');
+        const gogn = {
+            labels: [],
+            datasets: [
+                { label: 'Óskgildi', data: [] },
+                { label: 'Kerfi', data: [], tension: 0.5 },
+                { label: 'Útmerki', data: [], tension: 0.5 }
+            ]
+        };
+        const config = {
+            type: 'line',
+            data: gogn,
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' }}
+            },
+        };
+        const linurit = new Chart(canvas, config);
 
 
 
@@ -54,55 +69,39 @@
             }
         }
 
+
+
         // Svona er hægt að nota reglirinn:
-        const pidReglir = new PIDReglir(0.2, 0.01, 0.05);
-        const oskGildi = 30; // Merkið sem við viljum regla að.
+        // ATH! Kp, Ki, og Kd gildum er hægtað breytta hérna!!
+        const pidReglir = new PIDReglir(0.2, 0.01, 0.05); //  <---- Kp, Ki, Kd
+        let oskGildi = 30; // Merkið sem við viljum regla að.
         let kerfi = 10; // Múverandi staða á kerfinu.
 
         // Herma tíma sem líður (með föstum tíma þrepum):
         const dt = 0.1;
         for (let i = 0; i < 50; i++) {
+            // Breyta óskgildi:
+            if(i === 30)
+                oskGildi = 15;
+
+            // Merki reglað:
             const utMerki = pidReglir.reikna(kerfi, oskGildi, dt);
 
             // Bæta merki frá reglir við kerfið.
             // Hérna fer stýring fram á kerfinu (the control action):
             kerfi += utMerki;
 
+
+
             // Sýn niðurstöður í console:
-            console.log(`Iteration ${i + 1}: oskGildi=${oskGildi}, Kerfið=${kerfi}, Útmerki=${utMerki}`);
-
-            // Pushing data for graph
-            time_arr.push(i + 1);
-            data1_arr.push(oskGildi);
-            data2_arr.push(kerfi);
-            data3_arr.push(utMerki);
+            console.log(`Tími=${i + 1}: oskGildi=${oskGildi}, Kerfið=${kerfi}, Útmerki=${utMerki}`);
+            // Skrá niðurstöður í línurit:
+            linurit.data.labels.push(i + 1);
+            linurit.data.datasets[0].data.push(oskGildi);
+            linurit.data.datasets[1].data.push(kerfi);
+            linurit.data.datasets[2].data.push(utMerki);
         }
-
-
-
-        // Making the graph
-        new Chart("myChart", {
-            type: "line",
-            data: {
-                labels: time_arr,
-                datasets: [{ 
-                data: data1_arr,
-                borderColor: "red",
-                fill: false
-                }, { 
-                data: data2_arr,
-                borderColor: "green",
-                fill: false
-                }, { 
-                data: data3_arr,
-                borderColor: "blue",
-                fill: false
-                }]
-            },
-            options: {
-                legend: {display: false}
-            }
-        });
+        linurit.update();
 
     </script>
   </body>
